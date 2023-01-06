@@ -1,6 +1,6 @@
-mod db;
-
 use db::Database;
+use db::User;
+
 use surrealdb::Error;
 use surrealdb::Session;
 

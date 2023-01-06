@@ -8,3 +8,8 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1.23.1", features = ["full"] }
 surrealdb = "1.0.0-beta.8"
+
+
+[lib]
+name = "db"
+path = "src/db.rs"

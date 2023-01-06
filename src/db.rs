@@ -3,6 +3,27 @@ use surrealdb::Session;
 use surrealdb::Response;
 use surrealdb::Error;
 
+
+pub struct User{
+	username: String,
+	email: String,
+	password: String
+}
+
+impl User {
+	pub fn generate_create_query(&self) -> String {
+		let query = format!("
+			CREATE user SET
+			username = '{}',
+			email = '{}',
+			password = '{}',
+			created_on = time::now(),
+
+		", self.username, self.email, self.password);
+		query
+	}
+}
+
 pub struct Database{
 	datastore: Datastore,
 	surreal_ns: String,
@@ -40,6 +61,13 @@ impl Database {
 		Ok(response)
 
 	}
+
+	pub async fn create_user(&mut self, user: User) -> Result<Vec<Response>, Error>{
+		let query = user.generate_create_query();
+		let response = self.excute(query.as_ref()).await?;
+		Ok(response)
+	}
+
+	
 }
 
-// pub async fn set_session(ds: Datastore, sess)
