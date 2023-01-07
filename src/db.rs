@@ -1,3 +1,4 @@
+use sha3::Digest;
 use surrealdb::Datastore;
 use surrealdb::Session;
 use surrealdb::Response;
@@ -5,8 +6,8 @@ use surrealdb::Error;
 
 
 pub struct User{
-	username: String,
-	email: String,
+	pub username: String,
+	pub email: String,
 	password: String
 }
 
@@ -17,13 +18,23 @@ impl User {
 			username = '{}',
 			email = '{}',
 			password = '{}',
-			created_on = time::now(),
-
+			created_on = time::now()
+			;
 		", self.username, self.email, self.password);
 		query
 	}
-}
 
+	pub fn create(username: &str, email: &str, raw_password: &str) -> User {
+		let hashed_password = sha3::Sha3_256::digest(
+			raw_password.as_bytes()
+		);
+		return User {
+			username: username.to_owned(),
+			email: email.to_owned(),
+			password: raw_password.to_owned(), // hashed_password.escape_ascii().to_string(),
+		}
+	}
+}
 pub struct Database{
 	datastore: Datastore,
 	surreal_ns: String,
@@ -64,6 +75,7 @@ impl Database {
 
 	pub async fn create_user(&mut self, user: User) -> Result<Vec<Response>, Error>{
 		let query = user.generate_create_query();
+		dbg!(&query);
 		let response = self.excute(query.as_ref()).await?;
 		Ok(response)
 	}
