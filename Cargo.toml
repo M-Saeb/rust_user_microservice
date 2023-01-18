@@ -6,9 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+pwhash = "1.0.0"
 tokio = { version = "1.23.1", features = ["full"] }
 surrealdb = "1.0.0-beta.8"
-sha3 = "0.10.6"
+
 
 [lib]
 name = "db"
