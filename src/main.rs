@@ -1,5 +1,7 @@
-// use db::Database;
+mod utils;
+
 use db::User;
+// use crate::utils::vec_response_to_single_object;
 
 use surrealdb::Error;
 // use surrealdb::Session;

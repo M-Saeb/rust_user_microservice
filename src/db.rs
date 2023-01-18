@@ -1,16 +1,19 @@
+mod utils;
+
 use surrealdb::Datastore;
 use surrealdb::Session;
 use surrealdb::Response;
 use surrealdb::Error;
 use surrealdb::sql::{Value, Object};
 use pwhash::bcrypt;
-
+use crate::utils as format_utils;
 
 fn hash_string(raw_password: &str) -> String{
 	let hash_string = bcrypt::hash(raw_password).unwrap();
 	hash_string
 }
 
+#[derive(Debug)]
 pub struct User{
 	pub username: String,
 	pub email: String,
@@ -31,6 +34,7 @@ impl User {
 
 	pub fn create_obj(username: &str, email: &str, raw_password: &str) -> User {
 		let hashed_password = hash_string(raw_password);
+		dbg!(&hashed_password);
 		let new_user = User {
 			username: username.to_owned(),
 			email: email.to_owned(),
@@ -38,6 +42,32 @@ impl User {
 		};
 		new_user
 	}
+
+	pub fn from_object_response(response_object: Object) -> User {
+		let username_oject = response_object.get("username").expect("username not found");
+		let mut username_string = format_utils::value_to_string(username_oject.to_owned());
+		username_string.remove(0);
+		username_string.remove( username_string.len() - 1 );
+	
+
+		let email_object = response_object.get("email").expect("email not found");
+		let mut email_string = format_utils::value_to_string(email_object.to_owned());
+		email_string.remove(0);
+		email_string.remove( email_string.len() - 1 );
+
+
+		let password_object = response_object.get("password").expect("password not found");
+		let mut password_sting = format_utils::value_to_string(password_object.to_owned());
+		password_sting.remove(0);
+		password_sting.remove( password_sting.len() - 1 );
+		let user = User {
+			username: username_string,
+			email:  email_string,
+			password: password_sting,
+		};
+		user
+	}
+
 }
 
 
@@ -113,24 +143,17 @@ impl Database {
 	pub async fn create_user(&mut self, user: User) -> Result<Object, Error>{
 		let query = user.generate_create_query();
 		let raw_responses = self.excute(query.as_ref()).await?;
+		let formatted_reponse = format_utils::vec_response_to_query_response(raw_responses);
+		Ok(formatted_reponse)
+	}
 
-		let result = { 
-			let raw_create_response = &raw_responses[1];
-			let create_results = raw_create_response.result.as_ref().expect("Something went wrong");
-	
-			let create_first_clean = match create_results{
-				Value::Array(a) => a,
-				_ => panic!("This shoundn't have happend"),
-			};
-			let create_second_clean = &create_first_clean[0];	
-
-			match create_second_clean{
-				Value::Object(a) => a,
-				_ => panic!("This shoundn't have happend"),
-			}
-		};
-
-		Ok(result.to_owned())
+	pub async fn login(&mut self, username: &str, password: &str) -> Result< Object, Error>{
+		let fetch_user_query = format!("
+			SELECT * FROM user WHERE username = {} AND password = {};
+		", username, password);
+		let raw_response = self.excute(&fetch_user_query).await?;
+		let formatted_response = format_utils::vec_response_to_query_response(raw_response);
+		Ok(formatted_response)
 	}
 
 }
@@ -140,6 +163,7 @@ impl Database {
 mod test_db {
     use crate::{Database, User};
 	use surrealdb::Error;
+	use pwhash::bcrypt;
 
 	#[tokio::test]
     async fn test_db_conenction() -> Result<(), Error>{
@@ -153,10 +177,41 @@ mod test_db {
 		let response = db.create_user(
 			User::create_obj("username", "email", "password")
 		).await?;
-		dbg!(&response);
-		let username = response.get("username").expect("No Username found");
-		dbg!(username);
-		// println!("response = {:?}", response);
+		// dbg!(&response);
 		Ok(())
-    }
+	}
+
+	#[tokio::test]
+    async fn test_login() -> Result<(), Error> {
+		let mut db = Database::connect("memory", "test", "test").await?;
+		db.create_user(
+			User::create_obj("username", "email", "password")
+		).await?;
+
+		let user = db.login("username", "password").await?;
+		// dbg!(&user);
+
+		Ok(())
+	}
+
+	#[tokio::test]
+    async fn test_user_response_to_user_struct() -> Result<(), Error> {
+		let mut db = Database::connect("memory", "test", "test").await?;
+		let response = db.create_user(
+			User::create_obj("username", "email", "password")
+		).await?;
+
+		let user_struct = User::from_object_response(response);
+		assert_eq!(user_struct.username, "username");
+		assert_eq!(user_struct.email, "email");
+		dbg!(&user_struct.password);
+		let is_valid_password = bcrypt::verify("password", &user_struct.password);
+		assert!(
+			is_valid_password,
+			"Not a valid a password"
+		);
+
+		Ok(())
+	}
+
 }
