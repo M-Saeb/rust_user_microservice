@@ -1,8 +1,4 @@
-use surrealdb::Datastore;
-use surrealdb::Session;
 use surrealdb::Response;
-use surrealdb::Error;
-use surrealdb::Val;
 use surrealdb::sql::{Value, Array, Object};
 
 
