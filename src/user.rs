@@ -9,6 +9,7 @@ fn hash_string(raw_password: &str) -> String{
 
 #[derive(Debug)]
 pub struct User{
+	pub id: Option<String>,
 	pub username: String,
 	pub email: String,
 	pub password: String
@@ -28,8 +29,8 @@ impl User {
 
 	pub fn create_obj(username: &str, email: &str, raw_password: &str) -> User {
 		let hashed_password = hash_string(raw_password);
-		dbg!(&hashed_password);
 		let new_user = User {
+			id: None,
 			username: username.to_owned(),
 			email: email.to_owned(),
 			password: hashed_password,
@@ -38,23 +39,19 @@ impl User {
 	}
 
 	pub fn from_object_response(response_object: Object) -> User {
+		let id_object = response_object.get("id").expect("id not found");
+		let mut id_string = format_utils::value_to_string(id_object.to_owned());
+
 		let username_oject = response_object.get("username").expect("username not found");
 		let mut username_string = format_utils::value_to_string(username_oject.to_owned());
-		username_string.remove(0);
-		username_string.remove( username_string.len() - 1 );
-	
 
 		let email_object = response_object.get("email").expect("email not found");
 		let mut email_string = format_utils::value_to_string(email_object.to_owned());
-		email_string.remove(0);
-		email_string.remove( email_string.len() - 1 );
-
 
 		let password_object = response_object.get("password").expect("password not found");
 		let mut password_sting = format_utils::value_to_string(password_object.to_owned());
-		password_sting.remove(0);
-		password_sting.remove( password_sting.len() - 1 );
 		let user = User {
+			id: Some(id_string),
 			username: username_string,
 			email:  email_string,
 			password: password_sting,

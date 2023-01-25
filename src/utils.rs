@@ -1,5 +1,5 @@
 use surrealdb::Response;
-use surrealdb::sql::{Value, Array, Object};
+use surrealdb::sql::{Value, Array, Object, Thing};
 
 
 fn vec_response_to_item<'a>(vec_response: &'a Vec<Response>, index: usize) -> &'a Response{
@@ -36,8 +36,12 @@ fn value_to_object(value: Value) -> Object {
 pub fn value_to_string(value: Value) -> String{
 	let mut strand = match value{
 		Value::Strand(a) => a.to_string(),
+		Value::Thing(a) => a.to_string(),
 		_ => panic!("Expeceted Strand !! got something else"),
 	};
+	// INFO: removing the quotes (") at the begining and end of each string
+	strand.remove(0);
+	strand.remove( strand.len() - 1 );
 	strand
 }
 

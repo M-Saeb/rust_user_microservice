@@ -1,5 +1,11 @@
 use surrealdb::sql::{Object};
 use crate::utils as format_utils;
+use random_string::generate;
+
+pub fn get_all_chars() -> String{
+	let charset = String::from("1234567890abcdefghijlkmnopqrstuvwxyz");
+	return charset
+}
 
 
 #[derive(Debug)]
@@ -14,14 +20,16 @@ impl Session {
 			CREATE session SET
 			user = '{}',
 			key = '{}',
+			created_on = time::now(),
 			;", self.user, self.key);
 		query
 	}
 
-	pub fn create_obj(user: &str, key: &str) -> Session {
+	pub fn create_obj(user: &str) -> Session {
+		let key = generate(32, get_all_chars());
 		let new_session = Session {
 			user: user.to_owned(),
-			key: key.to_owned(),
+			key: key,
 		};
 		new_session
 	}
@@ -29,13 +37,9 @@ impl Session {
 	pub fn from_object_response(response_object: Object) -> Session {
 		let user_object = response_object.get("user").expect("user not found");
 		let mut user_string = format_utils::value_to_string(user_object.to_owned());
-		user_string.remove(0);
-		user_string.remove( user_string.len() - 1 );
 
 		let key_object = response_object.get("key").expect("key not found");
 		let mut key_string = format_utils::value_to_string(key_object.to_owned());
-		key_string.remove(0);
-		key_string.remove( key_string.len() - 1 );
 
 		let session = Session {
 			user: user_string,
@@ -49,15 +53,29 @@ impl Session {
 
 #[cfg(test)]
 mod test_session {
-    use crate::Session;
-	use pwhash::bcrypt;
+	use super::get_all_chars;
+    use crate::{Session};
+	use random_string::generate;
 
     #[test]
     fn test_create_obj() {
+		let user_id = generate(10, get_all_chars());
+		let session = Session::create_obj(user_id.as_str());
+		assert_eq!(session.user, user_id);
+		assert_eq!(session.key.len(), 32);
     }
 
 	#[test]
 	fn test_create_query(){
+		let user_id = "some_user_id";
+		let session = Session::create_obj(user_id);
+		let expected_query = format!("
+			CREATE session SET
+			user = 'some_user_id',
+			key = '{}',
+			created_on = time::now(),
+			;", session.key);
+		assert_eq!(expected_query, session.generate_create_query());
 	}
 }
 

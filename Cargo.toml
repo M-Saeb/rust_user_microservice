@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 pwhash = "1.0.0"
+random-string = "1.0"
 tokio = { version = "1.23.1", features = ["full"] }
 surrealdb = "1.0.0-beta.8"
 
