@@ -8,8 +8,8 @@ Micro Service that handles users registeration & authentication
 
 # Roadmap
 - [ ] Create Database inteface that can preform the following actions
-	- [*] register new user with hashed password
-	- [*] login user
+	- [x] register new user with hashed password
+	- [x] login user
 	- [ ] check token validity
 
 - [ ] Create API endpoints
