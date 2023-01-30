@@ -1,5 +1,5 @@
-use surrealdb::sql::{Object};
 use pwhash::bcrypt;
+use surrealdb::sql::{Object};
 use crate::utils as format_utils;
 
 fn hash_string(raw_password: &str) -> String{
@@ -16,6 +16,20 @@ pub struct User{
 }
 
 impl User {
+	pub fn generate_get_user_by_username_query(username: &str) -> String {
+		let query = format!(
+			"SELECT * FROM user WHERE username = '{}';",
+			username);
+		query
+	}
+
+	pub fn generate_get_user_by_email_query(email: &str) -> String {
+		let query = format!(
+			"SELECT * FROM user WHERE email = '{}';",
+		email);
+		query
+	}
+
 	pub fn generate_create_query(&self) -> String {
 		let query = format!("
 			CREATE user SET
@@ -92,6 +106,20 @@ mod test_user {
 			created_on = time::now()
 			;", password);
 		let actual_query = user.generate_create_query();
+		assert_eq!(expected_query, actual_query);
+	}
+
+	#[test]
+	fn test_get_user_by_username_query(){
+		let expected_query = "SELECT * FROM user WHERE username = 'username';";
+		let actual_query = User::generate_get_user_by_username_query("username");
+		assert_eq!(expected_query, actual_query);
+	}
+
+	#[test]
+	fn test_get_user_by_email_query(){
+		let expected_query = "SELECT * FROM user WHERE email = 'test@email.com';";
+		let actual_query = User::generate_get_user_by_email_query("test@email.com");
 		assert_eq!(expected_query, actual_query);
 	}
 }
