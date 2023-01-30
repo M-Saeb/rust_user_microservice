@@ -20,8 +20,22 @@ impl Session {
 			CREATE session SET
 			user = '{}',
 			key = '{}',
-			created_on = time::now(),
+			created_on = time::now()
 			;", self.user, self.key);
+		query
+	}
+
+	pub fn generate_select_by_key_query(key: &str) -> String {
+		let query = format!(
+			"SELECT * FROM session WHERE key = '{}';"
+		, key);
+		query
+	}
+
+	pub fn generate_delete_by_key_query(key: &str) -> String {
+		let query = format!(
+			"DELETE session WHERE key = '{}';"
+		, key);
 		query
 	}
 
@@ -66,6 +80,13 @@ mod test_session {
     }
 
 	#[test]
+	fn test_generate_select_by_key_query(){
+		let key = "123";
+		let expected_query = "SELECT * FROM session WHERE key = '123';";
+		assert_eq!(expected_query, Session::generate_select_by_key_query(key));
+	}
+
+	#[test]
 	fn test_create_query(){
 		let user_id = "some_user_id";
 		let session = Session::create_obj(user_id);
@@ -73,7 +94,7 @@ mod test_session {
 			CREATE session SET
 			user = 'some_user_id',
 			key = '{}',
-			created_on = time::now(),
+			created_on = time::now()
 			;", session.key);
 		assert_eq!(expected_query, session.generate_create_query());
 	}

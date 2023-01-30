@@ -1,3 +1,4 @@
+use std::error::Error;
 use surrealdb::Response;
 use surrealdb::sql::{Value, Array, Object, Thing};
 
@@ -20,9 +21,12 @@ fn value_to_array(value: Value) -> Array{
 	array
 }
 
-fn array_to_item(array: Array, index: usize) -> Value{
-	let value = &array[0];
-	value.to_owned()
+fn array_to_item(array: Array, index: usize) -> Result<Value, Box<dyn Error> >{
+	if array.len() <= index{
+		return Err("item not found".into())
+	}
+	let value = &array[index];
+	Ok(value.to_owned())
 }
 
 fn value_to_object(value: Value) -> Object {
@@ -45,16 +49,21 @@ pub fn value_to_string(value: Value) -> String{
 	strand
 }
 
-pub fn vec_response_to_query_response(vec_response: Vec<Response>) -> Object {
+pub fn vec_response_to_query_response(vec_response: Vec<Response>) -> Result<Object, Box<dyn Error> > {
 	let result = { 
 		let response = vec_response_to_item(&vec_response, 1);
 		let response_value = response_to_value(response);
 
 		let response_value_array = value_to_array(response_value);
 		let response_value_array_item = array_to_item(response_value_array, 0);
-		let create_result = value_to_object(response_value_array_item);
-		create_result
+		match response_value_array_item {
+			Ok(res) => {
+				let create_result = value_to_object(res);
+				return Ok(create_result)
+			},
+			Err(err) => return Err("Invalid query response".into())
+		}
 	};
 
-	result
+	Ok(result)
 }
