@@ -41,6 +41,34 @@ impl User {
 		query
 	}
 
+	pub fn generate_delete_query(user_id: &str) -> String {
+		let query = format!(
+			"DELETE user WHERE id = '{}';",
+			user_id
+		);
+		query
+	}
+
+	pub fn generate_update_query(&self) -> String {
+		assert!(
+			self.id.as_ref().is_some(),
+			"id attribute must have value for you to run generate_update_query()"
+		);
+		let query = format!(
+			"UPDATE user:{} SET
+			username = '{}',
+			email = '{}',
+			password = '{}';",
+			&self.id.as_ref().unwrap(), &self.username, &self.email, &self.password
+		);
+		query
+	}
+
+	pub fn set_password(&mut self, raw_password: &str){
+		let hashed_password = hash_string(raw_password);
+		self.password = hashed_password;
+	}
+
 	pub fn create_obj(username: &str, email: &str, raw_password: &str) -> User {
 		let hashed_password = hash_string(raw_password);
 		let new_user = User {
@@ -107,6 +135,31 @@ mod test_user {
 			;", password);
 		let actual_query = user.generate_create_query();
 		assert_eq!(expected_query, actual_query);
+	}
+
+	#[test]
+	fn test_delete_query(){
+		let actual_query = User::generate_delete_query("random_id");
+		let expected_query = "DELETE user WHERE id = 'random_id';";
+		assert_eq!(expected_query.to_string(), actual_query);
+	}
+
+	#[test]
+	fn test_update_query(){
+		let user = User{
+			id: Some("some_id".to_string()),
+			email: "email".to_string(),
+			username: "username".to_string(),
+			password: "password".to_string(),
+			
+		};
+		let actual_query = user.generate_update_query();
+		let expected_query = 
+			"UPDATE user:some_id SET
+			username = 'username',
+			email = 'email',
+			password = 'password';";
+		assert_eq!(expected_query.to_string(), actual_query);
 	}
 
 	#[test]
